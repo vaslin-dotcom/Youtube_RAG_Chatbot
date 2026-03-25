@@ -3,9 +3,14 @@ from llm import get_llm
 from schemas import KnowledgeGraph
 from config import *
 from prompts import entity_extraction_prompt
-
-
+import threading
+from neo4j.exceptions import TransientError
+from time import sleep
 entity_extractor_llm=get_llm(output_schema=KnowledgeGraph)
+
+MAX_WORKERS = 8
+RATE_LIMIT_DELAY = 1.5
+_rate_semaphore = threading.Semaphore(MAX_WORKERS)
 
 # def extract_video_id(url: str) -> str:
 #     parsed = urlparse(url)
@@ -117,6 +122,15 @@ def format_neo4j_context(records):
     return formatted
 
 
-
+def extract_single_chunk(args):
+    index, chunk, total = args
+    with _rate_semaphore:
+        try:
+            kg = extract_knowledgeGraph(chunk)
+            print(f"Extracted {index + 1}/{total}")
+            return index, kg, None
+        except Exception as e:
+            print(f"[ERROR] Chunk {index + 1}/{total} failed: {e}")
+            return index, None, str(e)
 
 
