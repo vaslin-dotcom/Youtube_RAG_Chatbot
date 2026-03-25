@@ -6,28 +6,71 @@ from neo4jSubgraph import neo4jGraph
 from supervisorSubgraph import supervisorGraph
 from groq import Groq
 import os
+import assemblyai as aai
 
+
+
+import time
+from functools import wraps
+
+
+def time_it(func):
+     @wraps(func)
+     def wrapper(*args, **kwargs):
+        start_time = time.perf_counter()  # Start the clock
+        result = func(*args, **kwargs)  # Run the actual function
+        end_time = time.perf_counter()  # Stop the clock
+
+        duration = end_time - start_time
+        print(f"⏱️  [{func.__name__}] took {duration:.4f} seconds")
+        return result
+
+     return wrapper
+
+
+@time_it
 def transcript_retriever(state: mainState):
+    print("transcribing")
     audio_path = state['audio_path']
 
-    client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-    with open(audio_path, "rb") as audio_file:
-        transcription = client.audio.transcriptions.create(
-            model="whisper-large-v3-turbo",
-            file=audio_file,
-            response_format="text"
-        )
+    # 1. Configure AssemblyAI
+    api_key = os.getenv("ASSEMBLYAI_API_KEY")
+    if not api_key:
+        raise ValueError("Missing 'ASSEMBLYAI_API_KEY' environment variable.")
 
-    transcript_text = transcription if isinstance(transcription, str) else transcription.text
+    aai.settings.api_key = api_key
+
+    # Using 'best' ensures high accuracy/speed and passes Pydantic validation
+    config = aai.TranscriptionConfig(
+        speech_models=["universal-3-pro", "universal-2"]
+    )
+    transcriber = aai.Transcriber()
+
+    # 2. Transcribe (SDK handles file opening automatically)
+    transcript = transcriber.transcribe(audio_path, config=config)
+
+    if transcript.error:
+        raise RuntimeError(f"AssemblyAI Error: {transcript.error}")
+
+    transcript_text = transcript.text
     print(f"Transcription done! ({len(transcript_text):,} characters)")
 
+    # 3. Optional: Cleanup the audio file if you want to keep the "no-clutter" behavior
+    try:
+        if os.path.exists(audio_path):
+            os.remove(audio_path)
+            print(f"[CLEANUP] Deleted: {audio_path}")
+    except Exception as e:
+        print(f"[CLEANUP WARNING] {e}")
+    print('completed transcription')
     return {'transcript': [transcript_text]}
 
+@time_it
 def chunker(state:mainState):
     transcripts=state['transcript']
     splitter=RecursiveCharacterTextSplitter(
-        chunk_size=1000,
-        chunk_overlap=200
+        chunk_size=1800,
+        chunk_overlap=300
     )
     chunks=[]
     for transcript in transcripts:
@@ -37,6 +80,7 @@ def chunker(state:mainState):
         'chunks': chunks
     }
 
+@time_it
 def run_vector(state:mainState):
     print("Running vector subgraph...")
     vector_write=vectorGraph.invoke({
@@ -47,6 +91,7 @@ def run_vector(state:mainState):
         'vector_status':vector_write['status'],
     }
 
+@time_it
 def run_neo4j(state:mainState):
     print("Running neo4j subgraph...")
     neo4j_write=neo4jGraph.invoke({
@@ -58,6 +103,7 @@ def run_neo4j(state:mainState):
         'graph_status':neo4j_write['status'],
     }
 
+@time_it
 def DB_check(state:mainState):
     if state['graph_status']==False:
         print("Graph creation_failed")
@@ -66,6 +112,7 @@ def DB_check(state:mainState):
     return{
     }
 
+@time_it
 def run_chatbot(state: mainState):
     supervisorGraph.invoke({
         'query': '',

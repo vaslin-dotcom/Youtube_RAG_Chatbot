@@ -3,6 +3,10 @@ from llm import get_llm
 from schemas import KnowledgeGraph
 from config import *
 from prompts import entity_extraction_prompt
+import threading
+from neo4j.exceptions import TransientError
+from time import sleep
+
 
 
 entity_extractor_llm=get_llm(output_schema=KnowledgeGraph)
@@ -99,5 +103,33 @@ def format_neo4j_context(records):
 
 
 
+MAX_WORKERS = 8
+RATE_LIMIT_DELAY = 1.5
+_rate_semaphore = threading.Semaphore(MAX_WORKERS)
+def extract_single_chunk(args):
+    index, chunk, total = args
+    with _rate_semaphore:
+        try:
+            kg = extract_knowledgeGraph(chunk)
+            print(f"Extracted {index + 1}/{total}")
+            return index, kg, None
+        except Exception as e:
+            print(f"[ERROR] Chunk {index + 1}/{total} failed: {e}")
+            return index, None, str(e)
 
-
+def store_with_retry(kg, max_retries=3):
+    for attempt in range(max_retries):
+        try:
+            with driver.session() as session:
+                store_in_graphDB(kg, session)
+            return True
+        except TransientError as e:
+            # Neo4j deadlock — wait and retry
+            if attempt < max_retries - 1:
+                sleep(0.5 * (attempt + 1))
+                continue
+            print(f"[SKIP] Failed after {max_retries} attempts: {e}")
+            return False
+        except Exception as e:
+            print(f"[ERROR] {e}")
+            return False
