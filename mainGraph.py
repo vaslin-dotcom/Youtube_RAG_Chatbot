@@ -145,7 +145,7 @@ youtube_rag=graph.compile()
 
 if __name__ == '__main__':
     dummy_state = {
-        "audio_path": "D:\data\MCP vs RAG Which AI Technique Should You Use - CodeCraft Academy.mp3",  # ← point to a real file
+        "audio_path": r"D:\data\The COMPLETE Game of Thrones Recap  CRAM IT - Screen Junkies (1).mp3",  # ← point to a real file
         "transcript": [],
         "chunks": [],
         "vector_status": False,

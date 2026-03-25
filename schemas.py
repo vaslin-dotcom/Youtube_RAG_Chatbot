@@ -36,8 +36,8 @@ class KnowledgeGraph(BaseModel):
 class neo4jState(TypedDict):
     chunks: List[str]
     graphs: List[KnowledgeGraph]
+    embedding_map: dict        # ✅ add this
     status: bool
-
 class RouteDecision(BaseModel):
     route: Literal["direct", "graph"]=Field(description="Say the mode of answering for the question")
     reason: str=Field(description="Reason for the decision")
