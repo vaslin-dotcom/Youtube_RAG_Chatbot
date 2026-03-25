@@ -35,6 +35,7 @@ class KnowledgeGraph(BaseModel):
 class neo4jState(TypedDict):
     chunks: List[str]
     graphs: List[KnowledgeGraph]
+    embedding_map: dict        # ✅ new
     status: bool
 
 class RouteDecision(BaseModel):

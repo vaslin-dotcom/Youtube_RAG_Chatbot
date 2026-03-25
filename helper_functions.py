@@ -27,23 +27,25 @@ def _sanitize_label(text: str) -> str:
     return text.strip().upper().replace(" ", "_").replace("-", "_")
 
 
-def store_in_graphDB(kg: KnowledgeGraph, session):
+# ── 1. Remove per-node embedding from store_in_graphDB, accept map instead ──
+def store_in_graphDB(kg: KnowledgeGraph, session, embedding_map: dict):
     for node in kg.nodes:
         props = property_to_dict(node.properties)
         label = _sanitize_label(node.type)
-        node_embedding = embeddings.embed_query(node.name)
-        session.run(
-            f"""
+        node_embedding = embedding_map.get(node.name)
+
+        query = f"""
             MERGE (n {{name: $name}})
             SET n:{label}
             SET n:__Entity__
             SET n += $props
-            SET n.embedding = $embedding
-            """,
-            name=node.name,
-            props=props,
-            embedding=node_embedding
-        )
+            {'SET n.embedding = $embedding' if node_embedding else ''}
+        """
+        params = dict(name=node.name, props=props)
+        if node_embedding:
+            params['embedding'] = node_embedding
+        session.run(query, **params)
+
     for relation in kg.relationships:
         props = property_to_dict(relation.properties)
         rel_type = _sanitize_label(relation.type)
@@ -58,6 +60,23 @@ def store_in_graphDB(kg: KnowledgeGraph, session):
             target=relation.target,
             props=props
         )
+
+# ── 2. store_with_retry now accepts embedding_map ──────────────────────────
+def store_with_retry(kg, embedding_map: dict, max_retries=3):
+    for attempt in range(max_retries):
+        try:
+            with driver.session() as session:
+                store_in_graphDB(kg, session, embedding_map)   # ✅ pass map
+            return True
+        except TransientError as e:
+            if attempt < max_retries - 1:
+                sleep(0.5 * (attempt + 1))
+                continue
+            print(f"[SKIP] Failed after {max_retries} attempts: {e}")
+            return False
+        except Exception as e:
+            print(f"[ERROR] {e}")
+            return False
 
 def close_driver():
     driver.close()
