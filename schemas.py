@@ -1,6 +1,5 @@
 from typing import TypedDict, List, Optional,Literal,Annotated
 from pydantic import BaseModel, Field
-from operator import concat
 
 class mainState(TypedDict):
     transcript: List[str]
@@ -60,7 +59,12 @@ class GradeDecision(BaseModel):
     )
     reason: str = Field(description="Reason for the decision")
 
+
+def limit_chat_history(current: List[dict], new: List[dict]) -> List[dict]:
+    full_history = current + new
+    return full_history[-3:]
+
 class supervisorState(TypedDict):
     query: str
     answer: str
-    chat_history: Annotated[List[dict], concat]
+    chat_history: Annotated[List[dict], limit_chat_history]
