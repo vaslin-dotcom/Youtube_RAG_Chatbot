@@ -41,3 +41,18 @@ embeddings = NVIDIAEmbeddings(
 
 #Neo4j driver
 driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USERNAME, NEO4J_PASSWORD))
+
+# import builtins, json, os
+#
+# NOTIFY_LOG_PATH = "/tmp/audiomind_progress.jsonl"
+#
+# def notify(msg: str):
+#     print(msg)
+#     try:
+#         with open(NOTIFY_LOG_PATH, "a") as f:
+#             f.write(json.dumps({"msg": msg}) + "\n")
+#     except Exception:
+#         pass
+#
+# builtins.notify = notify
+
