@@ -198,7 +198,8 @@ Your job is ONLY to resolve the query and produce a single standalone question w
 RULES:
 - If the question is already clear and self-contained → return it AS IS
 - Do NOT change the intent of the question
-- Return ONLY the standalone question, nothing else
+- if the user says his views or perspective generate qn accordingly
+- Return ONLY the standalone response, nothing else
 
 Standalone question:
 """
