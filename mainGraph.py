@@ -1,32 +1,27 @@
 from langgraph.graph import StateGraph,END
-from helper_functions import extract_video_id
 from schemas import *
-from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled, NoTranscriptFound
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from vectorSubgraph import vectorGraph
 from neo4jSubgraph import neo4jGraph
 from supervisorSubgraph import supervisorGraph
+from groq import Groq
+import os
 
 def transcript_retriever(state: mainState):
-    links = 'https://youtu.be/fE50xrnJnR8?si=RpJwEL8cS9dwbZQu'
-    links = links.split(',')
-    transcripts = []
+    audio_path = state['audio_path']
 
-    ytt_api = YouTubeTranscriptApi()
+    client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+    with open(audio_path, "rb") as audio_file:
+        transcription = client.audio.transcriptions.create(
+            model="whisper-large-v3-turbo",
+            file=audio_file,
+            response_format="text"
+        )
 
-    for link in links:
-        video_id = extract_video_id(link.strip())
-        try:
-            transcript_list = ytt_api.fetch(video_id)
-            full_text = " ".join([entry.text for entry in transcript_list])
-            transcripts.append(full_text)
-        except (TranscriptsDisabled, NoTranscriptFound):
-            print(f"No transcript available for {link}, skipping...")
+    transcript_text = transcription if isinstance(transcription, str) else transcription.text
+    print(f"Transcription done! ({len(transcript_text):,} characters)")
 
-    return {
-        'transcript': transcripts,
-        'links': links
-    }
+    return {'transcript': [transcript_text]}
 
 def chunker(state:mainState):
     transcripts=state['transcript']
@@ -103,8 +98,8 @@ youtube_rag=graph.compile()
 
 if __name__ == '__main__':
     dummy_state = {
+        "audio_path": "D:\data\MCP vs RAG Which AI Technique Should You Use - CodeCraft Academy.mp3",  # ← point to a real file
         "transcript": [],
-        "links": [],
         "chunks": [],
         "vector_status": False,
         "graph_status": False,

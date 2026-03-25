@@ -4,7 +4,7 @@ from operator import concat
 
 class mainState(TypedDict):
     transcript: List[str]
-    links: List[str]
+    audio_path:str
     chunks: List[str]
     vector_status: bool
     graph_status: bool

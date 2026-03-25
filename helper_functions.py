@@ -7,12 +7,12 @@ from prompts import entity_extraction_prompt
 
 entity_extractor_llm=get_llm(output_schema=KnowledgeGraph)
 
-def extract_video_id(url: str) -> str:
-    parsed = urlparse(url)
-    if parsed.netloc == "youtu.be":
-        return parsed.path[1:]
-    else:
-        return parse_qs(parsed.query)["v"][0]
+# def extract_video_id(url: str) -> str:
+#     parsed = urlparse(url)
+#     if parsed.netloc == "youtu.be":
+#         return parsed.path[1:]
+#     else:
+#         return parse_qs(parsed.query)["v"][0]
 
 def extract_knowledgeGraph(chunk:str) -> KnowledgeGraph:
     kg=entity_extractor_llm.invoke(entity_extraction_prompt.format(
