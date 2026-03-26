@@ -60,11 +60,16 @@ supervisor.add_conditional_edges('run_subgraph', should_continue, {
 
 supervisorGraph = supervisor.compile()
 
-if __name__=='__main__':
-    test_state={
-        'query':'',
-        'answer': '',
-        'chat_history': []
-    }
-    supervisor=supervisorGraph.invoke(test_state)
-    print(supervisor)
+# if __name__=='__main__':
+#     test_state={
+#         'query':'',
+#         'answer': '',
+#         'chat_history': []
+#     }
+#     supervisor=supervisorGraph.invoke(test_state)
+#     print(supervisor)
+if __name__ == '__main__':
+    img = supervisorGraph.get_graph(xray=True).draw_mermaid_png()
+    with open("supervisorSubgraph_xray.png", "wb") as f:
+        f.write(img)
+    print("Saved supervisorSubgraph_xray.png")

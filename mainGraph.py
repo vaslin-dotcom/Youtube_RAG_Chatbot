@@ -4,7 +4,6 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from vectorSubgraph import vectorGraph
 from neo4jSubgraph import neo4jGraph
 from supervisorSubgraph import supervisorGraph
-from groq import Groq
 import os
 import assemblyai as aai
 
@@ -55,7 +54,7 @@ def transcript_retriever(state: mainState):
     transcript_text = transcript.text
     print(f"Transcription done! ({len(transcript_text):,} characters)")
 
-    # 3. Optional: Cleanup the audio file if you want to keep the "no-clutter" behavior
+
     try:
         if os.path.exists(audio_path):
             os.remove(audio_path)
@@ -143,18 +142,23 @@ graph.add_edge('chatbot', END)
 
 youtube_rag=graph.compile()
 
+# if __name__ == '__main__':
+#     dummy_state = {
+#         "audio_path": r"D:\data\The COMPLETE Game of Thrones Recap  CRAM IT - Screen Junkies (1).mp3",  # ← point to a real file
+#         "transcript": [],
+#         "chunks": [],
+#         "vector_status": False,
+#         "graph_status": False,
+#         "add_more": False
+#     }
+#     result = youtube_rag.invoke(dummy_state)
+#     print(f"Vector status: {result['vector_status']}")
+#     print(f"Graph status: {result['graph_status']}")
+#     print(f"Total chunks processed: {len(result['chunks'])}")
+
+
 if __name__ == '__main__':
-    dummy_state = {
-        "audio_path": r"D:\data\The COMPLETE Game of Thrones Recap  CRAM IT - Screen Junkies (1).mp3",  # ← point to a real file
-        "transcript": [],
-        "chunks": [],
-        "vector_status": False,
-        "graph_status": False,
-        "add_more": False
-    }
-    result = youtube_rag.invoke(dummy_state)
-    print(f"Vector status: {result['vector_status']}")
-    print(f"Graph status: {result['graph_status']}")
-    print(f"Total chunks processed: {len(result['chunks'])}")
-
-
+    img = youtube_rag.get_graph(xray=True).draw_mermaid_png()
+    with open("mainGraph_xray.png", "wb") as f:
+        f.write(img)
+    print("Saved mainGraph_xray.png")

@@ -1,6 +1,4 @@
 from schemas import *
-from config import *
-from llm import get_llm
 from prompts import *
 from helper_functions import *
 from langgraph.graph import StateGraph,END
@@ -156,20 +154,26 @@ graph.add_edge('answer_generator', END)
 adaptiveRag=graph.compile()
 
 
-if __name__ == '__main__':
-    test_state = {
-        "query": "What did the director say about season 8 budget?",
-        "route": "",
-        "pinecone_context": [],
-        "neo4j_context": [],
-        "context_quality": False,
-        "answer": "",
-        "retry_count": 0,
-        "chat_history": []
-    }
+# if __name__ == '__main__':
+#     test_state = {
+#         "query": "What did the director say about season 8 budget?",
+#         "route": "",
+#         "pinecone_context": [],
+#         "neo4j_context": [],
+#         "context_quality": False,
+#         "answer": "",
+#         "retry_count": 0,
+#         "chat_history": []
+#     }
+#
+#     result = adaptiveRag.invoke(test_state)
+#     print(f"Route taken : {result['route']}")
+#     print(f"Retry count : {result['retry_count']}")
+#     print(f"Answer      : {result['answer']}")
+#     print(f"Chat history: {result['chat_history']}")
 
-    result = adaptiveRag.invoke(test_state)
-    print(f"Route taken : {result['route']}")
-    print(f"Retry count : {result['retry_count']}")
-    print(f"Answer      : {result['answer']}")
-    print(f"Chat history: {result['chat_history']}")
+if __name__ == '__main__':
+    img = adaptiveRag.get_graph(xray=True).draw_mermaid_png()
+    with open("adaptiveRagSubgraph_xray.png", "wb") as f:
+        f.write(img)
+    print("Saved adaptiveRagSubgraph_xray.png")

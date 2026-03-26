@@ -1,4 +1,4 @@
-from typing import TypedDict, List, Optional
+
 from schemas import *
 from helper_functions import *
 from time import sleep
@@ -32,7 +32,7 @@ def entity_extractor(state: neo4jState):
     return {'graphs': kg_list}
 
 
-# ✅ NEW NODE — batch embed all unique node names at once
+
 def batch_embedder(state: neo4jState):
     kg_list = state['graphs']
 
@@ -51,7 +51,7 @@ def batch_embedder(state: neo4jState):
 
     for i in range(0, total, EMBED_BATCH_SIZE):
         batch = unique_names[i : i + EMBED_BATCH_SIZE]
-        batch_vecs = embeddings.embed_documents(batch)  # single API call per batch
+        batch_vecs = embeddings.embed_documents(batch)
         all_embeddings.extend(batch_vecs)
         print(f"  Embedded {min(i + EMBED_BATCH_SIZE, total)}/{total}")
 
@@ -68,7 +68,7 @@ def batch_embedder(state: neo4jState):
 
 def graph_builder(state: neo4jState):
     kg = state['graphs']
-    embedding_map = state['embedding_map']   # ✅ use pre-computed map
+    embedding_map = state['embedding_map']
     total = len(kg)
 
     with driver.session() as session:
@@ -89,7 +89,6 @@ def graph_builder(state: neo4jState):
     success = 0
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
         futures = {
-            # ✅ pass embedding_map into each parallel write
             executor.submit(store_with_retry, connection, embedding_map): i
             for i, connection in enumerate(kg)
         }
@@ -105,12 +104,18 @@ def graph_builder(state: neo4jState):
 
 graph = StateGraph(neo4jState)
 graph.add_node('entity_extractor', entity_extractor)
-graph.add_node('batch_embedder', batch_embedder)      # ✅ new node
+graph.add_node('batch_embedder', batch_embedder)
 graph.add_node('graph_builder', graph_builder)
 
 graph.set_entry_point('entity_extractor')
-graph.add_edge('entity_extractor', 'batch_embedder')  # ✅ extract → embed → build
+graph.add_edge('entity_extractor', 'batch_embedder')
 graph.add_edge('batch_embedder', 'graph_builder')
 graph.add_edge('graph_builder', END)
 
 neo4jGraph = graph.compile()
+
+if __name__ == '__main__':
+    img = neo4jGraph.get_graph(xray=True).draw_mermaid_png()
+    with open("neo4jSubgraph_xray.png", "wb") as f:
+        f.write(img)
+    print("Saved neo4jSubgraph_xray.png")

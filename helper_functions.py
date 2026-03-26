@@ -1,4 +1,4 @@
-from urllib.parse import urlparse, parse_qs
+
 from llm import get_llm
 from schemas import KnowledgeGraph
 from config import *
@@ -36,7 +36,6 @@ def store_in_graphDB(kg: KnowledgeGraph, session, embedding_map: dict):
         props = property_to_dict(node.properties)
         label = _sanitize_label(node.type)
 
-        # ✅ Lookup from pre-computed map instead of calling API
         node_embedding = embedding_map.get(node.name)
         if node_embedding is None:
             print(f"[WARN] No embedding found for node: {node.name}, skipping embedding")
