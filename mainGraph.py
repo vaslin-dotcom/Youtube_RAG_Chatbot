@@ -3,7 +3,6 @@ from schemas import *
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from vectorSubgraph import vectorGraph
 from neo4jSubgraph import neo4jGraph
-from groq import Groq
 import os
 import assemblyai as aai
 
@@ -76,7 +75,7 @@ def chunker(state: mainState):
 
 
 def run_vector(state: mainState):
-    _notify("📦 Saving chunks to vector store...", 35)
+    _notify(" Saving chunks to vector store...", 35)
     vector_write = vectorGraph.invoke({'chunks': state['chunks'], 'status': False})
     if vector_write['status']:
         _notify("✅ Vector store ready", 55)
@@ -87,7 +86,7 @@ def run_vector(state: mainState):
 
 def run_neo4j(state: mainState):
     chunks = state['chunks']
-    _notify(f"🧠 Starting knowledge graph pipeline ({len(chunks)} chunks)...", 35)
+    _notify(f" Starting knowledge graph pipeline ({len(chunks)} chunks)...", 35)
     neo4j_write = neo4jGraph.invoke({
         'chunks': chunks,
         'status': False,
@@ -120,8 +119,8 @@ graph.add_node('DB_check', DB_check)
 
 graph.set_entry_point('transcript_retriever')
 graph.add_edge('transcript_retriever', 'chunker')
-graph.add_edge('chunker', 'run_vector')    # ✅ both fire from chunker
-graph.add_edge('chunker', 'run_neo4j')    # ✅ in parallel
+graph.add_edge('chunker', 'run_vector')
+graph.add_edge('chunker', 'run_neo4j')
 graph.add_edge('run_vector', 'DB_check')
 graph.add_edge('run_neo4j', 'DB_check')
 graph.add_edge('DB_check', END)

@@ -12,12 +12,6 @@ MAX_WORKERS = 8
 RATE_LIMIT_DELAY = 1.5
 _rate_semaphore = threading.Semaphore(MAX_WORKERS)
 
-# def extract_video_id(url: str) -> str:
-#     parsed = urlparse(url)
-#     if parsed.netloc == "youtu.be":
-#         return parsed.path[1:]
-#     else:
-#         return parse_qs(parsed.query)["v"][0]
 
 def extract_knowledgeGraph(chunk:str) -> KnowledgeGraph:
     kg=entity_extractor_llm.invoke(entity_extraction_prompt.format(

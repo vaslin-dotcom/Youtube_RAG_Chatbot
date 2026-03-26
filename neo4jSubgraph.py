@@ -26,7 +26,7 @@ def entity_extractor(state: neo4jState):
     results = [None] * total
     completed = [0]  # mutable counter for closure
 
-    _notify(f"🧠 Starting parallel extraction ({total} chunks, {MAX_WORKERS} workers)...", 52)
+    _notify(f" Starting parallel extraction ({total} chunks, {MAX_WORKERS} workers)...", 52)
 
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
         futures = {}
@@ -128,7 +128,7 @@ def graph_builder(state: neo4jState):
 # ── Graph wiring ──────────────────────────────────────────────────────────────
 graph = StateGraph(neo4jState)
 graph.add_node('entity_extractor', entity_extractor)
-graph.add_node('batch_embedder', batch_embedder)     # ✅ new node
+graph.add_node('batch_embedder', batch_embedder)
 graph.add_node('graph_builder', graph_builder)
 
 graph.set_entry_point('entity_extractor')
